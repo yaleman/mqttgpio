@@ -6,6 +6,20 @@ This is designed to allow you to automagically configure some [switches](https:/
 
 It also avoids having to allow remote access to the pigpio daemon, which is kinda bad.
 
+The following configuration:
+```
+[Devices]
+powerpi_1 = 13
+powerpi_1_default = 1
+powerpi_2 = 6
+powerpi_2_default = 1
+powerpi_3 = 5
+powerpi_4 = 12
+```
+Gives:
+
+![example interface](readme-screenshot-ha.png)
+
 ## Configuration
 
 The configuration file needs to be in one of the following locations:
