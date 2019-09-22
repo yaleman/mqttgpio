@@ -73,4 +73,5 @@ Double check the configuration file, you might have mistyped something, or you m
 
 ## TODO
 
+* Add a `_friendly` config option to push a friendly name to Home Assistant
 * Maybe make it so it reads back the GPIO state periodically, and if it's changed (ie, something else changes it) then udpate the state
