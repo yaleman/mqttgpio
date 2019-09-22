@@ -35,22 +35,36 @@ else:
     DO_PINS = False 
 
 logger = logging.getLogger('mqttcontroller')
-logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler())
 
 
 cfg = configparser.ConfigParser()
 configfiles = ['/etc/mqttgpio.conf', './mqttgpio.conf', '/opt/mqttgpio/mqttgpio.conf']
-cfg.read(configfiles)
-MQTT_QOS = cfg.getint("MQTT", 'MQTTQOS', fallback=2)
+parsed_files = cfg.read(configfiles)
+
+log_level = cfg.get('Default', 'logging', fallback='info')
+
+log_levels = { 'info' : logging.INFO, 'debug' : logging.DEBUG, 'warning' : logging.WARNING, 'error' : logging.ERROR }
+if log_level in log_levels.keys():
+    logger.setLevel(log_levels[log_level])
+else:
+    logger.setLevel(logging.DEBUG)
+    logger.debug(f"Configuration file had a misconfigured 'logging' setting ({log_level}) - setting to DEBUG")
+
+logger.info(f"Loaded configuration from: {','.join(parsed_files)}")
+
+mqtt_qos = cfg.getint("MQTT", 'MQTTQOS', fallback=2)
+mqtt_broker = cfg.get("MQTT", "MQTTBroker", fallback='localhost')
+mqtt_port = cfg.getint("MQTT", "MQTTPort", fallback=1883)
 
 client = mqtt.Client()
 
 
 class GPIOSwitch(object):
-    def __init__(self, name : str, pin : int, client : mqtt.Client=client, state : bool=False, logger : logging.getLogger=logger):
+    def __init__(self, name : str, pin : int, client : mqtt.Client=client, state : bool=False, logger : logging.getLogger=logger, mqtt_qos : int=mqtt_qos):
         self.name = name
         self.device_class = 'switch'
+        self.mqtt_qos = mqtt_qos
         self.client = client
         self.logger = logger
         self.pin = pin
@@ -79,6 +93,11 @@ class GPIOSwitch(object):
         """ returns the command topic as a string """
         return f"{self.name}/cmnd"
 
+    def _publish(self, topic, payload):
+        """ publishes a message """
+        return self.client.publish(topic, payload, qos=self.mqtt_qos)
+
+
     def announce_config(self):
         """ sends the MQTT message to configure home assistant """
         payload = {
@@ -88,15 +107,14 @@ class GPIOSwitch(object):
             "val_tpl" : '{{value_json.POWER}}',
         }
         self.logger.debug(f"{self.name}.announce_config({str(payload)})")
-        client.publish(self.config_topic(), payload=json.dumps(payload), qos=MQTT_QOS)
-        return
+        self._publish(self.config_topic(), payload=json.dumps(payload))
 
     def announce_state(self):
         """ sends the MQTT message about the current state """
         payload = { 'POWER' : self.str_state() }
         
         self.logger.debug(f"{self.name}.announce_state({str(payload)})")
-        client.publish(self.state_topic(), payload=json.dumps(payload), qos=MQTT_QOS)
+        self._publish(self.state_topic(), payload=json.dumps(payload))
 
     def _set_state(self, state):
         """ Does a few things:
@@ -146,42 +164,41 @@ def on_message(client, userdata, msg):
     if not matched and msg.topic.startswith('$SYS') == False:
         logger.info(f"Command for unknown device: {msg.topic}={str(msg.payload)}")
 
-
-# set up a scheduler to allow regular messages
-
-
+# callback functions for MQTT
 client.on_connect = on_connect
 client.on_message = on_message
 
 
-logger.debug("Connecting...")
-client.connect(cfg.get("MQTT", "MQTTBroker", fallback='localhost'), cfg.getint("MQTT", "MQTTPort", fallback=1883), 60)
-logger.debug("Done!")
-# start a non-blocking client loop in a thread
+logger.debug(f"Connecting to mqtt://{mqtt_broker}:{mqtt_port}")
+while True:
+    try:
+        client.connect(mqtt_broker, mqtt_port, 60)
+        break # break out of the "retry until it works" loop
+    except ConnectionRefusedError:
+        logger.info(f"Unable to connect to mqtt://{mqtt_broker}:{mqtt_port}, connection refused. Sleeping for 60 seconds.")
+        time.sleep(60)
+logger.debug(f"Connected to mqtt://{mqtt_broker}:{mqtt_port}")
 
+# create the device/pin associations from the config file
 devices = []
 if cfg.has_section('Devices'):
     for name, pin in cfg.items('Devices'):
         if name.endswith("_default") == False:
-            # make a device
             # look for a device_state option
             state = cfg.getboolean('Devices', f"{name}_default", fallback=False)
             logger.debug(f"Creating {name}:{pin} ({state})")
             devices.append(GPIOSwitch(name=name, pin=pin, state=state))
 
-logger.debug("Loop time.")
+logger.debug("Starting the MQTT thread")
 client.loop_start()
 
-logger.debug("Scheduling regular events...")
+logger.debug("Scheduling regular events... ")
 for device in devices:
     schedule.every(5).minutes.do(device.announce_config)
     schedule.every(30).seconds.do(device.announce_state)
-logger.debug("Done")
+logger.debug("Scheduling complete.")
 
 logger.info("Starting the main loop")
 while True:
     schedule.run_pending()
     time.sleep(1)
-
-logger.debug("Loop stopping.")
-client.loop_stop()

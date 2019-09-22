@@ -37,7 +37,8 @@ You might need to change the configuration in `raspi-config` depending on what y
 3. `sudo ln -s /opt/mqttgpio/mqttgpio.service /etc/systemd/system/mqttgpio.service`
 4. `sudo pip3 install -r /opt/mqttgpio/requirements.txt`
 5. `sudo systemctl enable mqttgpio`
-6. `sudo systemctl start mqttgpio`
+6. Make sure you configure your `mqttgpio.conf` file in one of the above locations.
+7. `sudo systemctl start mqttgpio`
 
 This'll run as root, if you want to change the user it runs as, undo the link, copy mqttgpio.service to `/etc/systemd/system/` and add a `User=` line to the Service section. Documentation for the service file format is [here on freedesktop.org](https://www.freedesktop.org/software/systemd/man/systemd.service.html).
 
@@ -49,6 +50,12 @@ In the case that I update my code, or you do:
 2. `git pull`
 3. `sudo systemctl daemon-reload` (if the `.service` file has changed, or you've edited it)
 4. `sudo systemctl restart mqttgpio`
+
+## Troubleshooting
+
+*I'm seeing "Unable to connect to MQTT Broker localhost:1883" but I thought I configured it properly*
+
+Double check the configuration file, you might have mistyped something, or you might have multiple config files. You'll probably see a line like "Configuration file had a misconfigured 'logging' setting (something) - setting to DEBUG" if it doesn't match the options available.
 
 ## TODO
 

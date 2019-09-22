@@ -1,3 +1,6 @@
+[Default]
+logging=foo # one of 'info', 'debug', 'warning', 'error'
+
 [MQTT]
 MQTTBroker = mqtt.example.com
 MQTTPort = 1883
@@ -5,8 +8,8 @@ MQTTQOS = 2
 
 [Devices]
 # device called powerpi_1 on pin 13, default setting is "on"
-powerpi_1 : 13
-powerpi_1_default : 1
+# powerpi_1 = 13
+# powerpi_1_default = 1
 # device called powerpi_2 on pin 6, default setting is "off"
-powerpi_2 : 6
-powerpi_2_default : 2
+# powerpi_2 = 6
+# powerpi_2_default = 2
