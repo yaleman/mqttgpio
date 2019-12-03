@@ -105,3 +105,4 @@ venv.bak/
 
 # ignore our local config file
 mqttgpio.conf
+.vscode/settings.json
