@@ -63,9 +63,9 @@ class GPIOSwitch(object):
     def __init__(self, name: str,
                  pin: int,
                  client: mqtt.Client,
-                 initial_state: bool = False,
+                 qos: int,
                  logging_object: logging.getLogger = logger,
-                 qos: int = mqtt_qos
+                 initial_state: bool = False,
                 ):
         self.name = name
         self.device_class = 'switch'
@@ -199,7 +199,7 @@ if __name__ == '__main__':
                 # look for a device_state option
                 state = cfg.getboolean('Devices', f"{name}_default", fallback=False)
                 logger.debug("Creating %s:%s (%s)", name, pin, state)
-                ACTIVE_DEVICES.append(GPIOSwitch(name=name, pin=pin, client=client, initial_state=state))
+                ACTIVE_DEVICES.append(GPIOSwitch(name=name, pin=pin, client=client, qos=mqtt_qos, initial_state=state))
 
     logger.debug("Starting the MQTT thread")
     client.loop_start()
