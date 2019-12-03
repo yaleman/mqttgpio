@@ -60,8 +60,9 @@ logger.info("Loaded configuration from: %s", ','.join(parsed_files))
 
 class GPIOSwitch(object):
     """ a single pin controller """
-    def __init__(self, name: str, pin: int,
-                 client: mqtt.Client = client,
+    def __init__(self, name: str,
+                 pin: int,
+                 client: mqtt.Client,
                  initial_state: bool = False,
                  logging_object: logging.getLogger = logger,
                  qos: int = mqtt_qos
@@ -197,8 +198,8 @@ if __name__ == '__main__':
             if not name.endswith("_default"):
                 # look for a device_state option
                 state = cfg.getboolean('Devices', f"{name}_default", fallback=False)
-                logger.debug(f"Creating {name}:{pin} ({state})")
-                ACTIVE_DEVICES.append(GPIOSwitch(name=name, pin=pin, initial_state=state))
+                logger.debug("Creating %s:%s (%s)", name, pin, state)
+                ACTIVE_DEVICES.append(GPIOSwitch(name=name, pin=pin, client=client, initial_state=state))
 
     logger.debug("Starting the MQTT thread")
     client.loop_start()
