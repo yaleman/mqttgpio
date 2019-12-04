@@ -38,23 +38,23 @@ logger.addHandler(logging.StreamHandler())
 
 
 cfg = configparser.ConfigParser()
-configfiles = ['/etc/mqttgpio.conf', './mqttgpio.conf', '/opt/mqttgpio/mqttgpio.conf']
-parsed_files = cfg.read(configfiles)
+CONFIGFILES = ['/etc/mqttgpio.conf', './mqttgpio.conf', '/opt/mqttgpio/mqttgpio.conf']
+PARSED_FILES = cfg.read(CONFIGFILES)
 
-log_level = cfg.get('Default', 'logging', fallback='info')
+LOG_LEVEL = cfg.get('Default', 'logging', fallback='info')
 
-log_levels = {'info' : logging.INFO,
+LOG_LEVELS = {'info' : logging.INFO,
               'debug' : logging.DEBUG,
               'warning' : logging.WARNING,
               'error' : logging.ERROR
              }
-if log_level in log_levels.keys():
-    logger.setLevel(log_levels[log_level])
+if LOG_LEVEL in LOG_LEVELS.keys():
+    logger.setLevel(LOG_LEVELS[LOG_LEVEL])
 else:
     logger.setLevel(logging.DEBUG)
-    logger.debug("Configuration file had a misconfigured 'logging' setting (%s) - setting to DEBUG", log_level)
+    logger.debug("Configuration file had a misconfigured 'logging' setting (%s) - setting to DEBUG", LOG_LEVEL)
 
-logger.info("Loaded configuration from: %s", ','.join(parsed_files))
+logger.info("Loaded configuration from: %s", ','.join(PARSED_FILES))
 
 
 
