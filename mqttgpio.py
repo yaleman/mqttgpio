@@ -52,7 +52,7 @@ if LOG_LEVEL in LOG_LEVELS.keys():
     LOG_OBJECT.setLevel(LOG_LEVELS[LOG_LEVEL])
 else:
     LOG_OBJECT.setLevel(logging.DEBUG)
-    LOG_OBJECT.debug("Configuration file had a misconfigured 'logging' setting (%s) - setting to DEBUG", LOG_LEVEL)
+    LOG_OBJECT.debug("Configuration file had a misconfigured 'logging' setting (%s) - setting to DEBUG", LOG_LEVEL) #pylint: disable=line-too-long
 
 LOG_OBJECT.info("Loaded configuration from: %s", ','.join(PARSED_FILES))
 
@@ -158,7 +158,7 @@ class GPIOSwitch(): #pylint: disable=too-many-instance-attributes
         elif payload == b'OFF':
             self._set_state(False)
         else:
-            LOG_OBJECT.WARN("%s.handle_command(%s) is weird - should match '(ON|OFF)'", self.name, payload)
+            LOG_OBJECT.WARN("%s.handle_command(%s) is weird - should match '(ON|OFF)'", self.name, payload) # pylint: disable=line-too-long
 
 def on_connect(client_object, userdata, flags, result_code): # noqa: pylint: disable=unused-argument
     """The callback for when the client receives a CONNACK response from the server."""
@@ -199,7 +199,7 @@ if __name__ == '__main__':
             MQTTCLIENT.connect(MQTT_BROKER, MQTT_PORT, 60)
             break # break out of the "retry until it works" loop
         except ConnectionRefusedError:
-            LOG_OBJECT.info("Unable to connect to mqtt://%s:%s, connection refused. Sleeping for 60 seconds.",
+            LOG_OBJECT.info("Unable to connect to mqtt://%s:%s, connection refused. Sleeping for 60 seconds.", # pylint: disable=line-too-long
                             MQTT_BROKER,
                             MQTT_PORT,
                             )
@@ -212,7 +212,10 @@ if __name__ == '__main__':
         for device_name, device_pin in CONFIG.items('Devices'):
             if not device_name.endswith("_default"):
                 # look for a device_state option
-                config_state = CONFIG.getboolean('Devices', f"{device_name}_default", fallback=False)
+                config_state = CONFIG.getboolean('Devices',
+                                                 f"{device_name}_default",
+                                                 fallback=False,
+                                                )
                 LOG_OBJECT.debug("Creating %s:%s (%s)", device_name, device_pin, config_state)
                 ACTIVE_DEVICES.append(GPIOSwitch(name=device_name,
                                                  pin=device_pin,
