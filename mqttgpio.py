@@ -33,15 +33,15 @@ if sys.platform == 'linux':
 else:
     DO_PINS = False
 
-logger = logging.getLogger('mqttcontroller')
-logger.addHandler(logging.StreamHandler())
+LOG_OBJECT = logging.getLogger('mqttcontroller') #pylint: disable: invalid-name
+LOG_OBJECT.addHandler(logging.StreamHandler())
 
 
-cfg = configparser.ConfigParser()
+CONFIG = configparser.ConfigParser()
 CONFIGFILES = ['/etc/mqttgpio.conf', './mqttgpio.conf', '/opt/mqttgpio/mqttgpio.conf']
-PARSED_FILES = cfg.read(CONFIGFILES)
+PARSED_FILES = CONFIG.read(CONFIGFILES)
 
-LOG_LEVEL = cfg.get('Default', 'logging', fallback='info')
+LOG_LEVEL = CONFIG.get('Default', 'logging', fallback='info')
 
 LOG_LEVELS = {'info' : logging.INFO,
               'debug' : logging.DEBUG,
@@ -49,24 +49,24 @@ LOG_LEVELS = {'info' : logging.INFO,
               'error' : logging.ERROR
              }
 if LOG_LEVEL in LOG_LEVELS.keys():
-    logger.setLevel(LOG_LEVELS[LOG_LEVEL])
+    LOG_OBJECT.setLevel(LOG_LEVELS[LOG_LEVEL])
 else:
-    logger.setLevel(logging.DEBUG)
-    logger.debug("Configuration file had a misconfigured 'logging' setting (%s) - setting to DEBUG", LOG_LEVEL)
+    LOG_OBJECT.setLevel(logging.DEBUG)
+    LOG_OBJECT.debug("Configuration file had a misconfigured 'logging' setting (%s) - setting to DEBUG", LOG_LEVEL)
 
-logger.info("Loaded configuration from: %s", ','.join(PARSED_FILES))
+LOG_OBJECT.info("Loaded configuration from: %s", ','.join(PARSED_FILES))
 
 
 
-class GPIOSwitch(object):
+class GPIOSwitch(): #pylint: disable=too-many-instance-attributes
     """ a single pin controller """
     def __init__(self, name: str,
                  pin: int,
                  client: mqtt.Client,
                  qos: int,
-                 logging_object: logging.getLogger = logger,
+                 logging_object: logging.getLogger = LOG_OBJECT,
                  initial_state: bool = False,
-                ):
+                ): #pylint: disable=too-many-arguments
         self.name = name
         self.device_class = 'switch'
         self.mqtt_qos = qos
@@ -74,7 +74,7 @@ class GPIOSwitch(object):
         self.logger = logging_object
         self.pin = pin
         if DO_PINS:
-            self.pin_io = gpiozero.LED(self.pin)
+            self.pin_io = gpiozero.LED(self.pin) #pylint: disable=undefined-variable
 
         # might as well say hello on startup
         self.announce_config()
@@ -146,11 +146,11 @@ class GPIOSwitch(object):
         elif payload == b'OFF':
             self._set_state(False)
         else:
-            logger.WARN("%s.handle_command(%s) is weird - should match '(ON|OFF)'", self.name, payload)
+            LOG_OBJECT.WARN("%s.handle_command(%s) is weird - should match '(ON|OFF)'", self.name, payload)
 
 def on_connect(client_object, userdata, flags, result_code): # noqa: pylint: disable=unused-argument
     """The callback for when the client receives a CONNACK response from the server."""
-    logger.info("Connected with result code %s", result_code)
+    LOG_OBJECT.info("Connected with result code %s", result_code)
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -163,61 +163,62 @@ def on_message(client_object, userdata, msg): # noqa: pylint: disable=unused-arg
     matched = False
     for device_object in ACTIVE_DEVICES:
         if msg.topic == device_object.command_topic():
-            logger.info("Command to %s : %s", device_object.name, msg.payload)
+            LOG_OBJECT.info("Command to %s : %s", device_object.name, msg.payload)
             device_object.handle_command(msg.payload)
             matched = True
     if not matched and not msg.topic.startswith('$SYS'):
-        logger.info("Command for unknown device: %s=%s", msg.topic, msg.payload)
+        LOG_OBJECT.info("Command for unknown device: %s=%s", msg.topic, msg.payload)
 
 if __name__ == '__main__':
 
-    MQTT_QOS = cfg.getint("MQTT", 'MQTTQOS', fallback=2)
-    MQTT_BROKER = cfg.get("MQTT", "MQTTBroker", fallback='localhost')
-    MQTT_PORT = cfg.getint("MQTT", "MQTTPort", fallback=1883)
+    MQTT_QOS = CONFIG.getint("MQTT", 'MQTTQOS', fallback=2)
+    MQTT_BROKER = CONFIG.get("MQTT", "MQTTBroker", fallback='localhost')
+    MQTT_PORT = CONFIG.getint("MQTT", "MQTTPort", fallback=1883)
 
-    client = mqtt.Client()
+    MQTTCLIENT = mqtt.Client()
     # callback functions for MQTT
-    client.on_connect = on_connect
-    client.on_message = on_message
+    MQTTCLIENT.on_connect = on_connect
+    MQTTCLIENT.on_message = on_message
 
 
-    logger.debug("Connecting to mqtt://%s:%s", MQTT_BROKER, MQTT_PORT)
+    LOG_OBJECT.debug("Connecting to mqtt://%s:%s", MQTT_BROKER, MQTT_PORT)
     while True:
         try:
-            client.connect(MQTT_BROKER, MQTT_PORT, 60)
+            MQTTCLIENT.connect(MQTT_BROKER, MQTT_PORT, 60)
             break # break out of the "retry until it works" loop
         except ConnectionRefusedError:
-            logger.info("Unable to connect to mqtt://%s:%s, connection refused. Sleeping for 60 seconds.",
-                        MQTT_BROKER,
-                        MQTT_PORT)
+            LOG_OBJECT.info("Unable to connect to mqtt://%s:%s, connection refused. Sleeping for 60 seconds.",
+                            MQTT_BROKER,
+                            MQTT_PORT,
+                            )
             time.sleep(60)
-    logger.debug("Connected to mqtt://%s:%s", MQTT_BROKER, MQTT_PORT)
+    LOG_OBJECT.debug("Connected to mqtt://%s:%s", MQTT_BROKER, MQTT_PORT)
 
     # create the device/pin associations from the config file
     ACTIVE_DEVICES = []
-    if cfg.has_section('Devices'):
-        for name, pin in cfg.items('Devices'):
-            if not name.endswith("_default"):
+    if CONFIG.has_section('Devices'):
+        for device_name, device_pin in CONFIG.items('Devices'):
+            if not device_name.endswith("_default"):
                 # look for a device_state option
-                state = cfg.getboolean('Devices', f"{name}_default", fallback=False)
-                logger.debug("Creating %s:%s (%s)", name, pin, state)
-                ACTIVE_DEVICES.append(GPIOSwitch(name=name,
-                                                 pin=pin,
-                                                 client=client,
+                config_state = CONFIG.getboolean('Devices', f"{device_name}_default", fallback=False)
+                LOG_OBJECT.debug("Creating %s:%s (%s)", device_name, device_pin, config_state)
+                ACTIVE_DEVICES.append(GPIOSwitch(name=device_name,
+                                                 pin=device_pin,
+                                                 client=MQTTCLIENT,
                                                  qos=MQTT_QOS,
-                                                 initial_state=state
+                                                 initial_state=config_state,
                                                  ))
 
-    logger.debug("Starting the MQTT thread")
-    client.loop_start()
+    LOG_OBJECT.debug("Starting the MQTT thread")
+    MQTTCLIENT.loop_start()
 
-    logger.debug("Scheduling regular events... ")
+    LOG_OBJECT.debug("Scheduling regular events... ")
     for device in ACTIVE_DEVICES:
         schedule.every(5).minutes.do(device.announce_config)
         schedule.every(30).seconds.do(device.announce_state)
-    logger.debug("Scheduling complete.")
+    LOG_OBJECT.debug("Scheduling complete.")
 
-    logger.info("Starting the main loop")
+    LOG_OBJECT.info("Starting the main loop")
     while True:
         schedule.run_pending()
         time.sleep(1)
