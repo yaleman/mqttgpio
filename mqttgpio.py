@@ -100,19 +100,31 @@ class GPIOSwitch(): #pylint: disable=too-many-instance-attributes
 
     def _publish(self, topic, payload):
         """ publishes a message """
-        return self.client.publish(topic, payload, qos=self.mqtt_qos)
+        return self.client.publish(topic,
+                                   payload,
+                                   qos=self.mqtt_qos,
+                                   )
 
 
     def announce_config(self):
-        """ sends the MQTT message to configure home assistant """
+        """ sends the MQTT message to configure
+            home assistant
+        """
         payload = {
             'name' : self.name,
             'state_topic' : self.state_topic(),
             'command_topic' : self.command_topic(),
             "val_tpl" : '{{value_json.POWER}}',
         }
-        self.logger.debug("%s.announce_config(%s)", self.name, payload)
-        self._publish(self.config_topic(), payload=json.dumps(payload))
+        self.logger.debug(
+            "%s.announce_config(%s)",
+            self.name,
+            payload,
+            )
+        self._publish(
+            self.config_topic(),
+            payload=json.dumps(payload),
+            )
 
     def announce_state(self):
         """ sends the MQTT message about the current state """
