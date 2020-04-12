@@ -10,31 +10,30 @@ Switch docs: https://developers.home-assistant.io/docs/en/entity_switch.html
 """
 import json
 import logging
+from os import uname
 import time
 import sys
 import configparser
 
 try:
+    import gpiozero
     import paho.mqtt.client as mqtt
-except ImportError:
-    sys.exit("You need to install paho-mqtt - pip3 install paho-mqtt")
-try:
     import schedule
-except ImportError:
-    sys.exit("You need to install schedule - pip3 install schedule")
+except ImportError as import_error:
+    sys.exit(f"Package import failure: {import_error}")
 
-if sys.platform == 'linux':
-    # hopefully the raspi
-    try:
-        import gpiozero
-    except ImportError:
-        sys.exit("You need to install gpiozero")
-    DO_PINS = True
-else:
-    DO_PINS = False
 
 LOG_OBJECT = logging.getLogger('mqttcontroller') #pylint: disable: invalid-name
 LOG_OBJECT.addHandler(logging.StreamHandler())
+#if sys.platform == 'linux':
+if 'arm' in uname().machine:
+    MOCK_PINS = False
+else:
+    from gpiozero.pins.mock import MockFactory
+    gpiozero.Device.pin_factory = MockFactory()
+    MOCK_PINS = True
+    LOG_OBJECT.info("Not running on a Pi, using mock objects")
+
 
 
 CONFIG = configparser.ConfigParser()
@@ -69,12 +68,13 @@ class GPIOSwitch(): #pylint: disable=too-many-instance-attributes
                 ): #pylint: disable=too-many-arguments
         self.name = name
         self.device_class = 'switch'
-        self.mqtt_qos = qos
         self.client = client
+        self.mqtt_qos = qos
         self.logger = logging_object
-        self.pin = pin
-        if DO_PINS:
-            self.pin_io = gpiozero.LED(self.pin) #pylint: disable=undefined-variable
+        if MOCK_PINS:
+            self.pin_io = gpiozero.Device.pin_factory.pin(pin)
+        else:
+            self.pin_io = gpiozero.LED(self.pin) # pylint: disable=undefined-variable
 
         # might as well say hello on startup
         self.announce_config()
@@ -139,14 +139,18 @@ class GPIOSwitch(): #pylint: disable=too-many-instance-attributes
             - sets the GPIO
             - announces via MQTT the current state
         """
-        if DO_PINS:
+        if MOCK_PINS:
+            if state:
+                self.pin_io.drive_low()
+            else:
+                self.pin_io.drive_high()
+            self.logger.debug("%s:%s (dev-mode) = %s", self.name, self.pin_io, state)
+        else:
             if state:
                 self.pin_io.on()
             else:
                 self.pin_io.off()
-            self.logger.debug("%s:%s (GPIO) = %s", self.name, self.pin, state)
-        else:
-            self.logger.debug("%s:%s (dev-mode) = %s", self.name, self.pin, state)
+            self.logger.debug("%s:%s (GPIO) = %s", self.name, self.pin_io, state)
         self.state = state
         self.announce_state()
 
