@@ -74,7 +74,7 @@ class GPIOSwitch(): #pylint: disable=too-many-instance-attributes
         if MOCK_PINS:
             self.pin_io = gpiozero.Device.pin_factory.pin(pin)
         else:
-            self.pin_io = gpiozero.LED(self.pin) # pylint: disable=undefined-variable
+            self.pin_io = gpiozero.LED(pin) # pylint: disable=undefined-variable
 
         # might as well say hello on startup
         self.announce_config()
