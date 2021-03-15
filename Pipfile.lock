@@ -23,11 +23,11 @@
         },
         "gpiozero": {
             "hashes": [
-                "sha256:101044038e71cec8be2fa841d4cea9e50e7962e9fb0287f465298b59e3f06594",
-                "sha256:ae1a8dc4e6e793ffd8f900968f3290d218052c46347fa0c0503c65fabe422e4d"
+                "sha256:05dc40f7bceeb9d37c2efe6c5ae1b886725ef9b056e3a5a90d07b7fc0fed3a86",
+                "sha256:8b6c11e0d351c395cc256aff19cae23e7f7759a6164254a791c82877e3fcc5ef"
             ],
             "index": "pypi",
-            "version": "==1.5.1"
+            "version": "==1.6.0"
         },
         "paho-mqtt": {
             "hashes": [
