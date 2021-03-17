@@ -16,18 +16,18 @@
     "default": {
         "colorzero": {
             "hashes": [
-                "sha256:acba47119b5d8555680d3cda9afe6ccc5481385ccc3c00084dd973f7aa184599",
-                "sha256:e3c36d15b293de2b2f77ff54a5bd243fffac941ed0a5332d0697a6612a26a0a3"
+                "sha256:0e60d743a6b8071498a56465f7719c96a5e92928f858bab1be2a0d606c9aa0f8",
+                "sha256:e7d5a5c26cd0dc37b164ebefc609f388de24f8593b659191e12d85f8f9d5eb58"
             ],
-            "version": "==1.1"
+            "version": "==2.0"
         },
         "gpiozero": {
             "hashes": [
-                "sha256:05dc40f7bceeb9d37c2efe6c5ae1b886725ef9b056e3a5a90d07b7fc0fed3a86",
-                "sha256:8b6c11e0d351c395cc256aff19cae23e7f7759a6164254a791c82877e3fcc5ef"
+                "sha256:286e42abc6b4fc29ae5011c4d4bf0dc6cb4e39e0467e99d2103f7f9d78660e60",
+                "sha256:859e498711adc854be63fb4c6ea4410d0b969b087c5e9d38e20f7e60bb4a0ba4"
             ],
             "index": "pypi",
-            "version": "==1.6.0"
+            "version": "==1.6.1"
         },
         "paho-mqtt": {
             "hashes": [
