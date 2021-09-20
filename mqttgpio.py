@@ -47,7 +47,7 @@ LOG_LEVELS = {'info' : logging.INFO,
               'warning' : logging.WARNING,
               'error' : logging.ERROR
              }
-if LOG_LEVEL in LOG_LEVELS.keys():
+if LOG_LEVEL in LOG_LEVELS:
     LOG_OBJECT.setLevel(LOG_LEVELS[LOG_LEVEL])
 else:
     LOG_OBJECT.setLevel(logging.DEBUG)
