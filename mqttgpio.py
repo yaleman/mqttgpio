@@ -239,5 +239,11 @@ if __name__ == '__main__':
 
     LOG_OBJECT.info("Starting the main loop")
     while True:
-        schedule.run_pending()
-        time.sleep(1)
+        try:
+            schedule.run_pending()
+            time.sleep(1)
+        # a hail-mary to keep it running :)
+        # pylint: disable=broad-except
+        except Exception as error_message:
+            LOG_OBJECT.error("Failed to do something, sleeping for 60 seconds: %s", error_message)
+            time.sleep(60)

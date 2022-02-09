@@ -106,3 +106,7 @@ venv.bak/
 # ignore our local config file
 mqttgpio.conf
 .vscode/settings.json
+**/__pycache__/*
+.vscode/
+.DS_Store
+config.py
