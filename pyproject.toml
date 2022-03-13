@@ -10,7 +10,7 @@ python = "^3.9"
 gpiozero = "^1.6.2"
 paho-mqtt = "^1.6.1"
 schedule = "^1.1.0"
-mypy = "^0.931"
+mypy = "^0.940"
 black = "^22.1.0"
 
 [tool.poetry.dev-dependencies]
