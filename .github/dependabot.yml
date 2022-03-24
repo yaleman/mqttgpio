@@ -3,6 +3,6 @@ updates:
 - package-ecosystem: pip
   schedule:
     interval: weekly
-    day: Monday
-    time: "00:00"
+    day: monday
+    time: 00:00
     timezone: Etc/UTC
