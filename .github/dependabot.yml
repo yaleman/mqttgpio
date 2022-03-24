@@ -2,7 +2,8 @@ version: 2
 updates:
 - package-ecosystem: pip
   schedule:
+    directory: "/"
     interval: weekly
     day: monday
-    time: 00:00
+    time: "00:00"
     timezone: Etc/UTC
