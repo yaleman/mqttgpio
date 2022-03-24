@@ -8,7 +8,6 @@ Discovery docs: https://www.home-assistant.io/docs/mqtt/discovery/
 Switch docs: https://developers.home-assistant.io/docs/en/entity_switch.html
 
 """
-import json
 import logging
 from os import uname
 import time
@@ -16,23 +15,17 @@ import sys
 import configparser
 
 try:
-    import gpiozero
-    import paho.mqtt.client as mqtt
-    import schedule
+    import gpiozero # type: ignore
+    import paho.mqtt.client as mqtt # type: ignore
+    import schedule # type: ignore
 except ImportError as import_error:
     sys.exit(f"Package import failure: {import_error}")
+
+from . import GPIOSwitch
 
 
 LOG_OBJECT = logging.getLogger('mqttcontroller') #pylint: disable: invalid-name
 LOG_OBJECT.addHandler(logging.StreamHandler())
-#if sys.platform == 'linux':
-if 'arm' in uname().machine:
-    MOCK_PINS = False
-else:
-    from gpiozero.pins.mock import MockFactory
-    gpiozero.Device.pin_factory = MockFactory()
-    MOCK_PINS = True
-    LOG_OBJECT.info("Not running on a Pi, using mock objects")
 
 
 
@@ -57,114 +50,7 @@ LOG_OBJECT.info("Loaded configuration from: %s", ','.join(PARSED_FILES))
 
 
 
-class GPIOSwitch(): #pylint: disable=too-many-instance-attributes
-    """ a single pin controller """
-    def __init__(self, name: str,
-                 pin: int,
-                 client: mqtt.Client,
-                 qos: int,
-                 logging_object: logging.getLogger = LOG_OBJECT,
-                 initial_state: bool = False,
-                ): #pylint: disable=too-many-arguments
-        self.name = name
-        self.device_class = 'switch'
-        self.client = client
-        self.mqtt_qos = qos
-        self.logger = logging_object
-        if MOCK_PINS:
-            self.pin_io = gpiozero.Device.pin_factory.pin(pin)
-        else:
-            self.pin_io = gpiozero.LED(pin) # pylint: disable=undefined-variable
-
-        # might as well say hello on startup
-        self.announce_config()
-        self._set_state(initial_state)
-
-    def str_state(self):
-        """ returns the state in the home assistant version """
-        if self.state:
-            return "ON"
-        return "OFF"
-
-    def config_topic(self):
-        """ returns the config topic """
-        return f"homeassistant/{self.device_class}/{self.name}/config"
-
-    def state_topic(self):
-        """ returns the state topic as a string """
-        return f"{self.name}/state"
-
-    def command_topic(self):
-        """ returns the command topic as a string """
-        return f"{self.name}/cmnd"
-
-    def _publish(self, topic, payload):
-        """ publishes a message """
-        return self.client.publish(topic,
-                                   payload,
-                                   qos=self.mqtt_qos,
-                                   )
-
-
-    def announce_config(self):
-        """ sends the MQTT message to configure
-            home assistant
-        """
-        payload = {
-            'name' : self.name,
-            'state_topic' : self.state_topic(),
-            'command_topic' : self.command_topic(),
-            "val_tpl" : '{{value_json.POWER}}',
-        }
-        self.logger.debug(
-            "%s.announce_config(%s)",
-            self.name,
-            payload,
-            )
-        self._publish(
-            self.config_topic(),
-            payload=json.dumps(payload),
-            )
-
-    def announce_state(self):
-        """ sends the MQTT message about the current state """
-        payload = {'POWER' : self.str_state()}
-
-        self.logger.debug("%s.announce_state(%s)", self.name, payload)
-        self._publish(self.state_topic(), payload=json.dumps(payload))
-
-    def _set_state(self, state):
-        """ Does a few things:
-            - sets the internal state variable
-            - sets the GPIO
-            - announces via MQTT the current state
-        """
-        if MOCK_PINS:
-            if state:
-                self.pin_io.drive_low()
-            else:
-                self.pin_io.drive_high()
-            self.logger.debug("%s:%s (dev-mode) = %s", self.name, self.pin_io, state)
-        else:
-            if state:
-                self.pin_io.on()
-            else:
-                self.pin_io.off()
-            self.logger.debug("%s:%s (GPIO) = %s", self.name, self.pin_io, state)
-        self.state = state
-        self.announce_state()
-
-    def handle_command(self, payload):
-        """ takes actions based on incoming commands """
-        self.logger.debug("%s.handle_command(%s)", self.name, payload)
-        if payload == b'ON':
-            self._set_state(True)
-        elif payload == b'OFF':
-            self._set_state(False)
-        else:
-            LOG_OBJECT.WARN("%s.handle_command(%s) is weird - should match '(ON|OFF)'", self.name, payload) # pylint: disable=line-too-long
-
-def on_connect(client_object, userdata, flags, result_code): # noqa: pylint: disable=unused-argument
+def mqtt_on_connect(client_object, userdata, flags, result_code): # noqa: pylint: disable=unused-argument
     """The callback for when the client receives a CONNACK response from the server."""
     LOG_OBJECT.info("Connected with result code %s", result_code)
 
@@ -174,7 +60,7 @@ def on_connect(client_object, userdata, flags, result_code): # noqa: pylint: dis
     for device_object in ACTIVE_DEVICES:
         client_object.subscribe(device_object.command_topic())
 
-def on_message(client_object, userdata, msg): # noqa: pylint: disable=unused-argument
+def mqtt_on_message(client_object, userdata, msg): # noqa: pylint: disable=unused-argument
     """The callback for when a PUBLISH message is received from the server."""
     matched = False
     for device_object in ACTIVE_DEVICES:
@@ -193,8 +79,8 @@ if __name__ == '__main__':
 
     MQTTCLIENT = mqtt.Client()
     # callback functions for MQTT
-    MQTTCLIENT.on_connect = on_connect
-    MQTTCLIENT.on_message = on_message
+    MQTTCLIENT.on_connect = mqtt_on_connect
+    MQTTCLIENT.on_message = mqtt_on_message
 
 
     LOG_OBJECT.debug("Connecting to mqtt://%s:%s", MQTT_BROKER, MQTT_PORT)
@@ -210,6 +96,16 @@ if __name__ == '__main__':
             time.sleep(60)
     LOG_OBJECT.debug("Connected to mqtt://%s:%s", MQTT_BROKER, MQTT_PORT)
 
+
+    if 'arm' in uname().machine:
+        MOCK_PINS = False
+    else:
+        from gpiozero.pins.mock import MockFactory # type: ignore
+        gpiozero.Device.pin_factory = MockFactory()
+        MOCK_PINS = True
+        LOG_OBJECT.info("Not running on a Pi, using mock objects")
+
+
     # create the device/pin associations from the config file
     ACTIVE_DEVICES = []
     if CONFIG.has_section('Devices'):
@@ -221,11 +117,18 @@ if __name__ == '__main__':
                                                  fallback=False,
                                                 )
                 LOG_OBJECT.debug("Creating %s:%s (%s)", device_name, device_pin, config_state)
+                try:
+                    int_device_pin = int(device_pin)
+                except ValueError as error:
+                    LOG_OBJECT.error("ValueError handling the configured device pin, bailing: %s", error)
+                    sys.exit(1)
                 ACTIVE_DEVICES.append(GPIOSwitch(name=device_name,
-                                                 pin=device_pin,
+                                                 pin=int(device_pin),
                                                  client=MQTTCLIENT,
                                                  qos=MQTT_QOS,
                                                  initial_state=config_state,
+                                                 mock_pins=MOCK_PINS,
+                                                 logging_object=LOG_OBJECT,
                                                  ))
 
     LOG_OBJECT.debug("Starting the MQTT thread")
