@@ -120,7 +120,10 @@ if __name__ == '__main__':
                 try:
                     int_device_pin = int(device_pin)
                 except ValueError as error:
-                    LOG_OBJECT.error("ValueError handling the configured device pin, bailing: %s", error)
+                    LOG_OBJECT.error(
+                        "ValueError handling the configured device pin, bailing: %s",
+                        error,
+                        )
                     sys.exit(1)
                 ACTIVE_DEVICES.append(GPIOSwitch(name=device_name,
                                                  pin=int(device_pin),
