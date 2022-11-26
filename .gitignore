@@ -110,3 +110,4 @@ mqttgpio.conf
 .vscode/
 .DS_Store
 config.py
+poetry.lock
