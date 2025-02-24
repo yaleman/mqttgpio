@@ -19,7 +19,5 @@ jobs:
           python-version: '3.9'
       - name: Running pytest
         run: |
-          python --version
-          python -m pip install --quiet --no-cache-dir --upgrade poetry
-          poetry install
-          poetry run python -m pytest
+          python -m pip install --quiet --no-cache-dir --upgrade uv
+          uv run pytest

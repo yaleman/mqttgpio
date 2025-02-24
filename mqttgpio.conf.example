@@ -1,5 +1,5 @@
 [Default]
-logging=foo # one of 'info', 'debug', 'warning', 'error'
+logging=info # one of 'info', 'debug', 'warning', 'error'
 
 [MQTT]
 MQTTBroker = mqtt.example.com
