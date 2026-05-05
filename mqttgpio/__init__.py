@@ -4,7 +4,7 @@ from configparser import ConfigParser
 import json
 import logging
 
-import gpiozero  # type: ignore
+import gpiozero
 import paho.mqtt.client as mqtt
 from paho.mqtt.client import MQTTMessageInfo
 
@@ -57,8 +57,9 @@ class GPIOSwitch:
         self.mqtt_qos = qos
         self.logger = logging_object
         self.mock_pins = mock_pins
+        self.pin_io: gpiozero.LED
         if mock_pins:
-            self.pin_io = gpiozero.Device.pin_factory.pin(pin)
+            self.pin_io = gpiozero.Device.pin_factory.pin(pin)  # ty:ignore[unresolved-attribute]
         else:
             self.pin_io = gpiozero.LED(pin)  # pylint: disable=undefined-variable
 
@@ -125,17 +126,14 @@ class GPIOSwitch:
         - sets the GPIO
         - announces via MQTT the current state
         """
+        # assert self.pin_io is not Unknown
+        if state:
+            self.pin_io.on()
+        else:
+            self.pin_io.off()
         if self.mock_pins:
-            if state:
-                self.pin_io.drive_low()
-            else:
-                self.pin_io.drive_high()
             self.logger.debug("%s:%s (dev-mode) = %s", self.name, self.pin_io, state)
         else:
-            if state:
-                self.pin_io.on()
-            else:
-                self.pin_io.off()
             self.logger.debug("%s:%s (GPIO) = %s", self.name, self.pin_io, state)
         self.state = state
         self.announce_state()

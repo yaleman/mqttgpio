@@ -1,9 +1,10 @@
-name: Run mypy
+---
+name: Run type checking
 
 "on":
   push:
     branches:
-      - main  # Set a branch to deploy
+      - main
   pull_request:
 
 jobs:
@@ -11,13 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
-      - name: Running mypy
+          python-version: "3.12"
+      - name: Running type checking
         run: |
           python -m pip install --quiet --no-cache-dir --upgrade uv
-          uv run mypy --strict mqttgpio tests
+          uv run ty check mqttgpio tests

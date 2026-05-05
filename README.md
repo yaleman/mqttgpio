@@ -7,7 +7,8 @@ This is designed to allow you to automagically configure some [switches](https:/
 It also avoids having to allow remote access to the pigpio daemon, which is kinda bad.
 
 The following configuration:
-```
+
+```ini
 [Devices]
 powerpi_1 = 13
 powerpi_1_default = 1
@@ -16,6 +17,7 @@ powerpi_2_default = 1
 powerpi_3 = 5
 powerpi_4 = 12
 ```
+
 Gives:
 
 ![example interface](readme-screenshot-ha.png)
@@ -74,4 +76,4 @@ Double check the configuration file, you might have mistyped something, or you m
 ## TODO
 
 * Add a `_friendly` config option to push a friendly name to Home Assistant
-* Maybe make it so it reads back the GPIO state periodically, and if it's changed (ie, something else changes it) then udpate the state
+* Maybe make it so it reads back the GPIO state periodically, and if it's changed (ie, something else changes it) then update the state

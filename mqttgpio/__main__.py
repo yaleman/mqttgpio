@@ -14,10 +14,14 @@ from os import uname
 import socket
 import time
 import sys
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from paho.mqtt.client import ConnectFlags
+    from paho.mqtt.properties import Properties
 
 try:
-    import gpiozero  # type: ignore
+    import gpiozero
     import paho.mqtt.client as mqtt
     from paho.mqtt.enums import CallbackAPIVersion
     from paho.mqtt.client import Client, MQTTMessage
@@ -42,11 +46,11 @@ class FailedToConnect(BaseException):
 
 
 def mqtt_on_connect(
-    client_object: Client,
+    client: Client,
     _userdata: Any,
-    _flags: dict[str, Any],
+    _flags: ConnectFlags,
     reason_code: ReasonCode,
-    _properties: dict[str, Any],
+    _properties: Properties | None,
 ) -> None:
     """The callback for when the client receives a CONNACK response from the server."""
 
@@ -66,9 +70,9 @@ def mqtt_on_connect(
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client_object.subscribe("$SYS/#")
+    client.subscribe("$SYS/#")
     for device_object in ACTIVE_DEVICES:
-        client_object.subscribe(device_object.command_topic())
+        client.subscribe(device_object.command_topic())
 
 
 def mqtt_on_message(_client_object: Client, _userdata: Any, msg: MQTTMessage) -> None:
@@ -90,7 +94,7 @@ if __name__ == "__main__":
 
     MQTTCLIENT = mqtt.Client(callback_api_version=CallbackAPIVersion.VERSION2)
     # callback functions for MQTT - type ignore is because of how the API is defined, V2 is different
-    MQTTCLIENT.on_connect = mqtt_on_connect  # type: ignore[assignment]
+    MQTTCLIENT.on_connect = mqtt_on_connect
     MQTTCLIENT.on_message = mqtt_on_message
 
     LOG_OBJECT.debug("Connecting to mqtt://%s:%s", MQTT_BROKER, MQTT_PORT)
@@ -116,7 +120,7 @@ if __name__ == "__main__":
     if "arm" in uname().machine:
         MOCK_PINS = False
     else:
-        from gpiozero.pins.mock import MockFactory  # type: ignore
+        from gpiozero.pins.mock import MockFactory
 
         gpiozero.Device.pin_factory = MockFactory()
         MOCK_PINS = True
