@@ -1,5 +1,9 @@
 # mqttgpio
 
+> [!NOTE]
+>
+> I'm not using this, please email me if you want to work on something.
+
 [Home Assistant](https://home-assistant.io) autoconfiguring [MQTT](http://www.mqtt.org/)-powered GPIO control for a Raspberry Pi.
 
 This is designed to allow you to automagically configure some [switches](https://developers.home-assistant.io/docs/en/entity_switch.html) to show up in Home Assitant which control GPIOs on your Raspberry Pi. This was made because I couldn't get the Home Assistant remote GPIO functionality to work when running HA in [docker](https://docker.com/).
